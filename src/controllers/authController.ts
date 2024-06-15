@@ -21,7 +21,6 @@ export const registerUserHandler = catchAsync(async (req: Request, res: Response
 	sendTokenByCookie(token, res, next)
 
 	const url = `${process.env.VITE_APP_LOCAL_DOMAIN}/auth/login`
-	console.log(url, 'lets see the url in register')
 	await new Email({ email: savedEmail, fullName: '' }, { url }).sendWelcome()
 
 	res.status(statusCode).json({
