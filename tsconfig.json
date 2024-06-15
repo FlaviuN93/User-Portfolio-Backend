@@ -9,6 +9,6 @@
 		"outDir": "./dist",
 		"moduleResolution": "Bundler"
 	},
-	"include": ["api/**/*.ts"],
-	"files": ["api/global.d.ts"]
+	"include": ["src/**/*.ts"],
+	"files": ["src/global.d.ts"]
 }
