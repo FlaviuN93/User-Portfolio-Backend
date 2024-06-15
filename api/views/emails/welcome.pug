@@ -1,0 +1,18 @@
+extends baseEmail
+
+block content
+  p Hi,
+  p Welcome to Devport! We're glad to have you with us 🎉
+  p We're here to make sure you can make a good portfolio and impress your next employees with your projects.
+  table.btn.btn-primary(role='presentation', border='0', cellpadding='0', cellspacing='0')
+    tbody
+      tr
+        td(align='left')
+          table(role='presentation', border='0', cellpadding='0', cellspacing='0')
+            tbody
+              tr
+                td
+                  a(href=`${url}`, target='_blank') Log in to your account
+
+  p If you require assistance or you want to leave some feedback, leave a message with our contact us form and we'll try to answer as soon as we can.
+  p - Flaviu Nemes, Main Developer
