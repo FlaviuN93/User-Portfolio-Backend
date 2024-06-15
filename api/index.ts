@@ -32,7 +32,7 @@ app.use(bodyParser.json({ limit: '2mb' }))
 app.use(bodyParser.urlencoded({ extended: true }))
 // Set security HTTP headers
 app.use(helmet())
-
+app.set('trust proxy', true)
 // Limits requests from users to the API
 app.use('/api', limiter)
 
