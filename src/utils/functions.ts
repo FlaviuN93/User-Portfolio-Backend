@@ -59,13 +59,11 @@ export const sendTokenByCookie = (token: string | undefined, res: Response, next
 
 	const cookieOptions = {
 		expires: new Date(Date.now() + +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
-		secure: false,
+		secure: true,
 		httpOnly: true,
 	}
 
-	if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
-
-	res.cookie('jwt', token, { ...cookieOptions, sameSite: 'lax' })
+	res.cookie('jwt', token, { ...cookieOptions, sameSite: 'none' })
 }
 
 export const splitStringByPattern = (value: string, pattern: string): string => value.split(pattern)[1]
