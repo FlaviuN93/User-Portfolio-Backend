@@ -63,7 +63,7 @@ export const sendTokenByCookie = (token: string | undefined, res: Response, next
 		httpOnly: true,
 	}
 
-	res.cookie('jwt', token, { ...cookieOptions, sameSite: 'lax' })
+	res.cookie('jwt', token, { ...cookieOptions, sameSite: 'strict' })
 }
 
 export const splitStringByPattern = (value: string, pattern: string): string => value.split(pattern)[1]
