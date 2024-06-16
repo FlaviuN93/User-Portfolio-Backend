@@ -55,7 +55,6 @@ export const signToken = (id: number): string =>
 	})
 
 export const sendTokenByCookie = (token: string | undefined, res: Response, next: NextFunction) => {
-	console.log(token, 'token')
 	if (!process.env.JWT_COOKIE_EXPIRES_IN || !token) return next(new AppError(500))
 
 	const cookieOptions = {
@@ -63,8 +62,6 @@ export const sendTokenByCookie = (token: string | undefined, res: Response, next
 		secure: true,
 		httpOnly: true,
 	}
-
-	// if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
 
 	res.cookie('jwt', token, { ...cookieOptions, sameSite: 'lax' })
 }

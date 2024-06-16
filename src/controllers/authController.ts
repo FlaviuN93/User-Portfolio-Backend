@@ -9,8 +9,6 @@ import { sendTokenByCookie } from '../utils/functions'
 import { UserRoles } from '../models/types'
 import { stringSchema } from '../services/baseSchema'
 
-// Have to come up with a default image avatar for when the user first registers and assign it to the user on the
-// supabase database.
 export const registerUserHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 	const { email, password } = await authSchema.parseAsync(req.body)
 
