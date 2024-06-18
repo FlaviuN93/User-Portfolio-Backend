@@ -18,22 +18,23 @@ const limiter = rateLimit({
 	//Remember to change later
 	max: 1000,
 	windowMs: 60 * 60 * 1000,
-	message: errorMessage[429],
+	message: new AppError(429),
+	standardHeaders: true,
+	legacyHeaders: false,
 })
 
 if (process.env.NODE_ENV === 'development') {
 	app.use(morgan('dev'))
 }
 
-app.set('trust proxy', true)
-
 // Cookie Parser
 app.use(cookieParser())
-
+app.set('trust proxy', true)
 app.use(bodyParser.json({ limit: '2mb' }))
 app.use(bodyParser.urlencoded({ extended: true }))
 // Set security HTTP headers
 app.use(helmet())
+
 // Limits requests from users to the API
 app.use('/api', limiter)
 
@@ -48,5 +49,4 @@ app.all('*', (req: Request, res: Response, next: NextFunction) => {
 })
 
 app.use(globalErrorHandler)
-
 export default app

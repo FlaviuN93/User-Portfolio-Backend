@@ -60,7 +60,7 @@ class Email {
 		await this.send('welcome', 'Welcome to Devport!')
 	}
 	async sendResetPassword() {
-		await this.send('resetPassword', 'Your password reset token (valid for only 10 min)')
+		await this.send('resetPassword', 'Reset your Devport password')
 	}
 
 	async contactUs() {

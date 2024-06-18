@@ -42,7 +42,8 @@ interface Item {
 export interface IDefault {
 	statusCode: number
 	statusText?: string[]
-	token?: string
+	accessToken?: string
+	refreshToken?: string
 }
 
 export interface IAvatar extends IDefault {

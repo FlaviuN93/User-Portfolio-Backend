@@ -1,4 +1,4 @@
-import pkg from 'jsonwebtoken'
+import pkg, { JwtPayload } from 'jsonwebtoken'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { NextFunction, Response } from 'express'
@@ -20,9 +20,12 @@ export const removeUserColumns = <T extends { [key: string]: any }>(obj: T): T =
 }
 
 // Verify Token
-export const verifyToken = <T extends jwt.JwtPayload>(reqToken: string): T | AppError => {
+export const verifyToken = <T extends jwt.JwtPayload>(reqToken: string, tokenType: 'refresh' | 'access'): T | AppError => {
+	let decodedToken: string | JwtPayload = ''
 	try {
-		const decodedToken = jwt.verify(reqToken, process.env.JWT_SECRET || '')
+		if (tokenType === 'access') decodedToken = jwt.verify(reqToken, process.env.ACCESS_TOKEN_SECRET || '')
+		else decodedToken = jwt.verify(reqToken, process.env.REFRESH_TOKEN_SECRET || '')
+
 		if (typeof decodedToken === 'string') return new AppError(500, 'JsonWebToken')
 		return decodedToken as T
 	} catch (err) {
@@ -45,25 +48,32 @@ export const isEmptyObject = (obj: Object<unknown>) => Object.keys(obj).length =
 export const createPasswordResetToken = (): PasswordResetTokenData => {
 	const resetToken = crypto.randomBytes(32).toString('hex')
 	const encryptedResetToken = crypto.createHash('sha256').update(resetToken).digest('hex')
-	const tokenExpiresIn = Date.now() + 10 * 60 * 1000
+	const tokenExpiresIn = Date.now() + 20 * 60 * 1000
 	return { resetToken, encryptedResetToken, tokenExpiresIn }
 }
 
-export const signToken = (id: number): string =>
-	jwt.sign({ userId: id }, process.env.JWT_SECRET || '', {
-		expiresIn: process.env.JWT_EXPIRES_IN,
+export const signAccessToken = (id: string): string =>
+	jwt.sign({ userId: id }, process.env.ACCESS_TOKEN_SECRET || '', {
+		expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
 	})
 
-export const sendTokenByCookie = (token: string | undefined, res: Response, next: NextFunction) => {
-	if (!process.env.JWT_COOKIE_EXPIRES_IN || !token) return next(new AppError(500))
+export const signRefreshToken = (id: string): string =>
+	jwt.sign({ userId: id }, process.env.REFRESH_TOKEN_SECRET || '', {
+		expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+	})
+
+export const sendTokenByCookie = (refreshToken: string | undefined, res: Response, next: NextFunction) => {
+	if (!process.env.JWT_COOKIE_EXPIRES_IN || !refreshToken) return next(new AppError(500))
 
 	const cookieOptions = {
-		expires: new Date(Date.now() + +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
 		secure: false,
 		httpOnly: true,
+		maxAge: +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
 	}
 
-	res.cookie('jwt', token, { ...cookieOptions, sameSite: 'lax' })
+	if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
+
+	res.cookie('jwt', refreshToken, cookieOptions)
 }
 
 export const splitStringByPattern = (value: string, pattern: string): string => value.split(pattern)[1]

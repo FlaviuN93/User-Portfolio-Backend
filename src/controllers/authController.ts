@@ -5,8 +5,8 @@ import Email from '../utils/email'
 import { catchAsync } from '../utils/errorFunctions'
 import { authSchema, contactUsSchema, forgotPasswordSchema, resetPasswordSchema } from '../services/routeSchema'
 import AppError, { getSuccessMessage } from '../utils/appError'
-import { sendTokenByCookie } from '../utils/functions'
-import { UserRoles } from '../models/types'
+import { sendTokenByCookie, signAccessToken, verifyToken } from '../utils/functions'
+import { TokenPayload, UserRoles } from '../models/types'
 import { stringSchema } from '../services/baseSchema'
 
 export const registerUserHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -15,8 +15,8 @@ export const registerUserHandler = catchAsync(async (req: Request, res: Response
 	const response = await registerUser(email, password)
 	if (response instanceof AppError) return next(response)
 
-	const { email: savedEmail, token, statusCode, statusText = [] } = response
-	sendTokenByCookie(token, res, next)
+	const { email: savedEmail, accessToken, refreshToken, statusCode, statusText = [] } = response
+	sendTokenByCookie(refreshToken, res, next)
 
 	const url = `${process.env.VITE_APP_LOCAL_DOMAIN}/auth/login`
 	await new Email({ email: savedEmail, fullName: '' }, { url }).sendWelcome()
@@ -24,6 +24,7 @@ export const registerUserHandler = catchAsync(async (req: Request, res: Response
 	res.status(statusCode).json({
 		message: getSuccessMessage(statusCode, statusText),
 		email: savedEmail,
+		token: accessToken,
 	})
 })
 
@@ -32,19 +33,32 @@ export const loginUserHandler = catchAsync(async (req: Request, res: Response, n
 	const response = await loginUser(email, password)
 
 	if (response instanceof AppError) return next(response)
-	const { user, token, statusCode, statusText = [] } = response
-	sendTokenByCookie(token, res, next)
+	const { user, accessToken, refreshToken, statusCode, statusText = [] } = response
+
+	sendTokenByCookie(refreshToken, res, next)
+
 	res.status(statusCode).json({
 		message: getSuccessMessage(statusCode, statusText),
 		user,
+		token: accessToken,
 	})
 })
+
+export const refreshTokenHandler = async (req: Request, res: Response, next: NextFunction) => {
+	if (!req.cookies.jwt) return next(new AppError(401))
+	const decodedToken = verifyToken<TokenPayload>(req.cookies.jwt, 'refresh')
+
+	if (decodedToken instanceof AppError) return next(decodedToken)
+	const accessToken = signAccessToken(decodedToken.userId.toString())
+
+	res.json({ token: accessToken })
+}
 
 export const logoutMeHandler = (req: Request, res: Response, next: NextFunction) => {
 	if (req.cookies.jwt) {
 		res.clearCookie('jwt')
 		res.status(200).json({ message: 'Log out Successful!' })
-	} else return next(new AppError(403, 'You are unauthorized to perform this action'))
+	}
 }
 
 export const updatePasswordHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -52,12 +66,10 @@ export const updatePasswordHandler = catchAsync(async (req: Request, res: Respon
 
 	const response = await updatePassword(password, req.userId)
 	if (response instanceof AppError) return next(response)
-	const { user, token, statusCode, statusText = [] } = response
+	const { statusCode, statusText = [] } = response
 
-	sendTokenByCookie(token, res, next)
 	res.status(statusCode).json({
 		message: getSuccessMessage(statusCode, statusText),
-		user,
 	})
 })
 
@@ -74,12 +86,16 @@ export const forgotPasswordHandler = catchAsync(async (req: Request, res: Respon
 })
 
 export const checkResetTokenHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+	console.log(req.params.resetToken, 'helloFromCheckReset')
 	const resetToken = stringSchema.parse(req.params.resetToken)
 	const response = await checkResetToken(resetToken)
 	if (response instanceof AppError) return next(response)
+
+	res.status(200).send('Success')
 })
 
 export const resetPasswordHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+	console.log('helloFromResetPassword')
 	const { password } = resetPasswordSchema.parse(req.body)
 	const response = await resetPassword(password, req.params.resetToken)
 
@@ -101,7 +117,10 @@ export const contactUsHandler = catchAsync(async (req: Request, res: Response, n
 })
 
 export const protectHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-	const response = await protect(req.cookies.jwt)
+	if (!req.headers.authorization?.startsWith('Bearer ')) return next(401)
+	const token = req.headers.authorization.split(' ')[1]
+
+	const response = await protect(token)
 	if (response instanceof AppError) return next(response)
 
 	req.userId = response.user.id

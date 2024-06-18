@@ -48,7 +48,6 @@ export const getMyProject = async (userId: string, projectId: string): Promise<I
 
 export const createMyProject = async (reqBody: CreateProject): Promise<IDefault | AppError> => {
 	const { error, status } = await supabase.from('projects').insert(reqBody)
-
 	if (error) return new AppError(status)
 
 	return { statusCode: 201, statusText: ['project', 'created'] }

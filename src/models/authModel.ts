@@ -3,7 +3,14 @@ import crypto from 'crypto'
 
 import supabase from '../services/supabase'
 import AppError from '../utils/appError'
-import { hasPasswordChanged, createPasswordResetToken, signToken, verifyToken, removeUserColumns } from '../utils/functions'
+import {
+	hasPasswordChanged,
+	createPasswordResetToken,
+	verifyToken,
+	removeUserColumns,
+	signAccessToken,
+	signRefreshToken,
+} from '../utils/functions'
 import { IDefault, IRegisterUser, IUser, TokenPayload, User, UserRoles } from './types'
 import Email from '../utils/email'
 
@@ -14,9 +21,10 @@ export const registerUser = async (email: string, password: string): Promise<IRe
 	if (!user) return new AppError(400)
 	if (error) return new AppError(500)
 
-	const token = signToken(user.id)
+	const accessToken = signAccessToken(user.id)
+	const refreshToken = signRefreshToken(user.id)
 
-	return { email: user.email, token, statusCode: 201, statusText: ['user', 'created'] }
+	return { email: user.email, accessToken, refreshToken, statusCode: 201, statusText: ['user', 'created'] }
 }
 
 export const loginUser = async (email: string, loginPassword: string): Promise<IUser | AppError> => {
@@ -25,25 +33,26 @@ export const loginUser = async (email: string, loginPassword: string): Promise<I
 	const arePasswordsEqual = await bcrypt.compare(loginPassword, user.password)
 	if (!arePasswordsEqual) return new AppError(401, `Hmm, your user credentials don't match. Try again`)
 
-	const token = signToken(user.id)
+	const accessToken = signAccessToken(user.id)
+	const refreshToken = signRefreshToken(user.id)
 	const loginUser = removeUserColumns<User>(user)
 
-	return { user: loginUser, token, statusCode: 200, statusText: ['sign in', 'Welcome back'] }
+	return { user: loginUser, accessToken, refreshToken, statusCode: 200, statusText: ['sign in', 'Welcome back'] }
 }
 
-export const updatePassword = async (password: string, userId: string): Promise<IUser | AppError> => {
+export const updatePassword = async (password: string, userId: string): Promise<IDefault | AppError> => {
 	const { data: user } = await supabase.from('users').select('*').eq('id', userId).single()
-	if (!user) return new AppError(404, 'User token has probably expired. Try to log in again.')
+	if (!user) return new AppError(403, 'User token has probably expired. Try again.')
+	const hashedPassword = await bcrypt.hash(password, 12)
 
-	const hashedPassword = bcrypt.hash(password, 12)
-	await supabase.from('users').update({ password: hashedPassword, passwordUpdatedAt: new Date().toISOString() }).eq('id', user.id)
+	const { error, status } = await supabase
+		.from('users')
+		.update({ password: hashedPassword, passwordUpdatedAt: new Date().toISOString() })
+		.eq('id', user.id)
 
-	const token = signToken(user.id)
-	const loginUser = removeUserColumns<User>(user)
+	if (error) return new AppError(status)
 
 	return {
-		user: loginUser,
-		token,
 		statusCode: 200,
 		statusText: ['update password', 'Your new password was updated successfully'],
 	}
@@ -115,20 +124,21 @@ export const resetPassword = async (newPassword: string, resetToken: string): Pr
 
 export const checkResetToken = async (resetToken: string): Promise<string | AppError> => {
 	const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
-	const { data: user } = await supabase
+	const { data: user, error } = await supabase
 		.from('users')
 		.select('id,resetToken')
 		.eq('resetToken', hashedToken)
 		.gt('resetTokenExpiresIn', Date.now())
 		.single()
-	if (!user) return new AppError(500, 'Reset token is invalid or has expired. Go to the forgot password page and start again.')
+
+	if (!user) return new AppError(400, 'Reset token is invalid or has expired.')
 	return 'Success'
 }
 
 export const protect = async (reqToken: string): Promise<{ user: { id: string; role: UserRoles } } | AppError> => {
 	if (!reqToken) return new AppError(401, 'You are not logged in. Please log in to gain access')
 
-	const decodedToken = verifyToken<TokenPayload>(reqToken)
+	const decodedToken = verifyToken<TokenPayload>(reqToken, 'access')
 	if (decodedToken instanceof AppError) return decodedToken
 
 	const { data: user } = await supabase.from('users').select('id,passwordUpdatedAt,role').eq('id', decodedToken.userId).single()
