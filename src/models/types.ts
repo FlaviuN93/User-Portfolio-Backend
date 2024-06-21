@@ -46,12 +46,8 @@ export interface IDefault {
 	refreshToken?: string
 }
 
-export interface IAvatar extends IDefault {
-	avatarURL: string
-}
-
-export interface ICover extends IDefault {
-	coverURL: string
+export interface IImageURL extends IDefault {
+	imageURL: string
 }
 
 // User Types

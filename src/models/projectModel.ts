@@ -28,26 +28,9 @@ export const getMyProjects = async (userId: string): Promise<IProjects | AppErro
 	return { projects, statusCode: 200 }
 }
 
-export const getMyProject = async (userId: string, projectId: string): Promise<IProject | AppError> => {
-	const {
-		data: project,
-		error,
-		status,
-	} = await supabase
-		.from('projects')
-		.select('id,imageURL,name,demoURL,repositoryURL,technologies,description')
-		.eq('id', projectId)
-		.eq('user_id', userId)
-		.single()
-
-	if (error) return new AppError(status)
-	if (!project) return new AppError(400)
-
-	return { project, statusCode: 200 }
-}
-
 export const createMyProject = async (reqBody: CreateProject): Promise<IDefault | AppError> => {
 	const { error, status } = await supabase.from('projects').insert(reqBody)
+
 	if (error) return new AppError(status)
 
 	return { statusCode: 201, statusText: ['project', 'created'] }

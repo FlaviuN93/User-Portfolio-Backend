@@ -6,12 +6,12 @@ import {
 	getMyProjectsData,
 	updateMyProjectData,
 	deleteMyProjectData,
-	getMyProjectData,
 	getTechnologiesData,
 	uploadProjectImage,
 	resizeProjectImage,
 } from '../controllers/projectController'
 
+// Order matters. Leave the routes with dynamic parameters at the bottom
 const projectRouter = express.Router()
 
 projectRouter.route('/currentUser/technologies').get(protectHandler, getTechnologiesData)
@@ -23,7 +23,6 @@ projectRouter
 
 projectRouter
 	.route('/currentUser/:projectId')
-	.get(protectHandler, userRolesHandler('user', 'tester'), getMyProjectData)
 	.put(protectHandler, userRolesHandler('user', 'tester'), uploadProjectImage, resizeProjectImage, updateMyProjectData)
 	.delete(protectHandler, userRolesHandler('user'), deleteMyProjectData)
 

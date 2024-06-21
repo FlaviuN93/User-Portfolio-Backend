@@ -41,12 +41,8 @@ export const updateUserSchema = z.object({
 	bio: z.union([bioSchema, z.literal('')]),
 })
 
-export const patchCoverSchema = z.object({
-	coverURL: z.union([urlSchema, z.null()]),
-})
-
-export const patchAvatarSchema = z.object({
-	avatarURL: z.union([urlSchema, z.null()]),
+export const patchImageSchema = z.object({
+	url: z.union([urlSchema, z.null()]),
 })
 
 export const contactUsSchema = z.object({

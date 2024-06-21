@@ -41,7 +41,10 @@ export const verifyToken = <T extends jwt.JwtPayload>(reqToken: string, tokenTyp
 	return new AppError(500, 'JsonWebToken')
 }
 
-export const hasPasswordChanged = (JWTTimestamp: number, passwordTimestamp: string) => JWTTimestamp < Date.parse(passwordTimestamp) / 1000
+export const hasPasswordChanged = (JWTTimestamp: number, passwordTimestamp: string) => {
+	const gracePeriod = 15 * 60
+	return JWTTimestamp + gracePeriod < Date.parse(passwordTimestamp) / 1000
+}
 
 export const isEmptyObject = (obj: Object<unknown>) => Object.keys(obj).length === 0
 

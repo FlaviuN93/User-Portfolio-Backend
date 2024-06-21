@@ -29,7 +29,7 @@ if (process.env.NODE_ENV === 'development') {
 
 // Cookie Parser
 app.use(cookieParser())
-app.set('trust proxy', true)
+
 app.use(bodyParser.json({ limit: '2mb' }))
 app.use(bodyParser.urlencoded({ extended: true }))
 // Set security HTTP headers

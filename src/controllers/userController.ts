@@ -11,7 +11,7 @@ import {
 	updateMyCover,
 	updateUser,
 } from '../models/userModel'
-import { patchAvatarSchema, patchCoverSchema, updateUserSchema } from '../services/routeSchema'
+import { patchImageSchema, updateUserSchema } from '../services/routeSchema'
 import { catchAsync } from '../utils/errorFunctions'
 import AppError, { getSuccessMessage } from '../utils/appError'
 import { idSchema, passwordSchema } from '../services/baseSchema'
@@ -28,8 +28,7 @@ export const upload = multer({
 
 export const resizeAvatarImage = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 	if (!req.file) return next()
-	console.log(req.file)
-	const resizedBuffer = await sharp(req.file.buffer).toFormat('png').resize(480, 480).toBuffer()
+	const resizedBuffer = await sharp(req.file.buffer).toFormat('png', { progressive: true, quality: 80 }).resize(720, 720).toBuffer()
 	req.file.buffer = resizedBuffer
 	req.file.mimetype = 'image/png'
 	req.file.filename = `avatar-${req.userId}-${Date.now()}.png`
@@ -40,7 +39,11 @@ export const resizeAvatarImage = catchAsync(async (req: Request, res: Response, 
 export const resizeCoverImage = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 	if (!req.file) return next()
 
-	const resizedBuffer = await sharp(req.file.buffer).resize(1200, 300).keepMetadata().toFormat('png').toBuffer()
+	const resizedBuffer = await sharp(req.file.buffer)
+		.resize(1200, 300)
+		.keepMetadata()
+		.toFormat('png', { progressive: true, quality: 80 })
+		.toBuffer()
 	req.file.buffer = resizedBuffer
 	req.file.mimetype = 'image/png'
 	req.file.filename = `cover-${req.userId}-${Date.now()}.png`
@@ -69,16 +72,17 @@ export const updateMyAvatarHandler = catchAsync(async (req: Request, res: Respon
 	if (req.file) {
 		const avatarUrl = await updateAvatarImage(req.file, req.userId)
 		if (avatarUrl instanceof AppError) return next(avatarUrl)
-		req.body.avatarURL = avatarUrl
+		req.body.url = avatarUrl
 	}
-	const url = patchAvatarSchema.parse(req.body)
-	const response = await updateMyAvatar(url.avatarURL, req.userId)
+	const { url } = patchImageSchema.parse(req.body)
+	const response = await updateMyAvatar(url, req.userId)
+
 	if (response instanceof AppError) return next(response)
-	const { avatarURL, statusCode, statusText = [] } = response
+	const { imageURL, statusCode, statusText = [] } = response
 
 	res.status(statusCode).json({
 		message: getSuccessMessage(statusCode, statusText),
-		avatarURL,
+		avatarURL: imageURL,
 	})
 })
 
@@ -86,16 +90,17 @@ export const updateMyCoverHandler = catchAsync(async (req: Request, res: Respons
 	if (req.file) {
 		const coverURL = await updateCoverImage(req.file, req.userId)
 		if (coverURL instanceof AppError) return next(coverURL)
-		req.body.coverURL = coverURL
+		req.body.url = coverURL
 	}
-	const url = patchCoverSchema.parse(req.body)
-	const response = await updateMyCover(url.coverURL, req.userId)
+
+	const { url } = patchImageSchema.parse(req.body)
+	const response = await updateMyCover(url, req.userId)
 	if (response instanceof AppError) return next(response)
-	const { coverURL, statusCode, statusText = [] } = response
+	const { imageURL, statusCode, statusText = [] } = response
 
 	res.status(statusCode).json({
 		message: getSuccessMessage(statusCode, statusText),
-		coverURL,
+		coverURL: imageURL,
 	})
 })
 
@@ -115,16 +120,16 @@ export const updateMeHandler = catchAsync(async (req: Request, res: Response, ne
 export const deleteMeHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 	const password = passwordSchema.parse(req.body.password)
 
-	const response = await deleteUser(password, req.userId)
-	if (response instanceof AppError) return next(response)
-
 	const coverImageResponse = await removeCoverImage(req.userId)
 	const avatarImageResponse = await removeAvatarImage(req.userId)
+
 	if (coverImageResponse instanceof AppError) return next(coverImageResponse)
 	if (avatarImageResponse instanceof AppError) return next(avatarImageResponse)
 
-	const { statusCode, statusText = [] } = response
+	const response = await deleteUser(password, req.userId)
+	if (response instanceof AppError) return next(response)
 
+	const { statusCode, statusText = [] } = response
 	res.cookie('jwt', '')
 	res.status(statusCode).json({
 		message: getSuccessMessage(statusCode, statusText),

@@ -16,10 +16,10 @@ import Email from '../utils/email'
 
 export const registerUser = async (email: string, password: string): Promise<IRegisterUser | AppError> => {
 	const hashedPassword = await bcrypt.hash(password, 12)
-	const { data: user, error } = await supabase.from('users').insert({ email, password: hashedPassword }).select('id,email').single()
+	const { data: user, error, status } = await supabase.from('users').insert({ email, password: hashedPassword }).select('id,email').single()
 
+	if (error) return new AppError(status, 'Email already exists. Please register with a different email')
 	if (!user) return new AppError(400)
-	if (error) return new AppError(500)
 
 	const accessToken = signAccessToken(user.id)
 	const refreshToken = signRefreshToken(user.id)
@@ -124,14 +124,14 @@ export const resetPassword = async (newPassword: string, resetToken: string): Pr
 
 export const checkResetToken = async (resetToken: string): Promise<string | AppError> => {
 	const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
-	const { data: user, error } = await supabase
+	const { data: user } = await supabase
 		.from('users')
 		.select('id,resetToken')
 		.eq('resetToken', hashedToken)
 		.gt('resetTokenExpiresIn', Date.now())
 		.single()
 
-	if (!user) return new AppError(400, 'Reset token is invalid or has expired.')
+	if (!user) return new AppError(401, 'Reset token is invalid or has expired.')
 	return 'Success'
 }
 
@@ -143,6 +143,7 @@ export const protect = async (reqToken: string): Promise<{ user: { id: string; r
 
 	const { data: user } = await supabase.from('users').select('id,passwordUpdatedAt,role').eq('id', decodedToken.userId).single()
 	if (!user) return new AppError(401, 'You are not logged in. Please log in to gain access')
+
 	const isPasswordChanged = hasPasswordChanged(decodedToken.iat as number, user.passwordUpdatedAt)
 	if (isPasswordChanged) return new AppError(401, 'You recently changed password! Please log in again')
 
