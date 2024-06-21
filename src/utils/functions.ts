@@ -69,12 +69,10 @@ export const sendTokenByCookie = (refreshToken: string | undefined, res: Respons
 	if (!process.env.JWT_COOKIE_EXPIRES_IN || !refreshToken) return next(new AppError(500))
 
 	const cookieOptions = {
-		secure: false,
+		secure: true,
 		httpOnly: true,
 		maxAge: +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
 	}
-
-	// if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
 
 	res.cookie('jwt', refreshToken, { ...cookieOptions, sameSite: 'none' })
 }
