@@ -74,7 +74,7 @@ export const sendTokenByCookie = (refreshToken: string | undefined, res: Respons
 		maxAge: +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
 	}
 
-	if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
+	// if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
 
 	res.cookie('jwt', refreshToken, { ...cookieOptions, sameSite: 'lax' })
 }
