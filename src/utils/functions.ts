@@ -76,7 +76,7 @@ export const sendTokenByCookie = (refreshToken: string | undefined, res: Respons
 
 	if (process.env.NODE_ENV === 'production') cookieOptions.secure = true
 
-	res.cookie('jwt', refreshToken, cookieOptions)
+	res.cookie('jwt', refreshToken, { ...cookieOptions, sameSite: 'lax' })
 }
 
 export const splitStringByPattern = (value: string, pattern: string): string => value.split(pattern)[1]

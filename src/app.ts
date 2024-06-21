@@ -8,7 +8,7 @@ import bodyParser from 'body-parser'
 import projectRouter from './routes/projectRoutes'
 import userRouter from './routes/userRoutes'
 import authRouter from './routes/authRoutes'
-import AppError, { errorMessage } from './utils/appError'
+import AppError from './utils/appError'
 import { globalErrorHandler } from './utils/errorFunctions'
 import cookieParser from 'cookie-parser'
 
