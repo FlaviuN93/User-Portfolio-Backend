@@ -66,7 +66,7 @@ export const signRefreshToken = (id: string): string =>
 	})
 
 export const sendTokenByCookie = (refreshToken: string | undefined, res: Response, next: NextFunction) => {
-	if (!process.env.JWT_COOKIE_EXPIRES_IN || !refreshToken) return next(new AppError(500))
+	if (!process.env.JWT_COOKIE_EXPIRES_IN || !refreshToken) return next(new AppError(400))
 
 	const cookieOptions = {
 		secure: true,
