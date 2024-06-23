@@ -30,8 +30,8 @@ if (process.env.NODE_ENV === 'development') {
 // Cookie Parser
 app.use(cookieParser())
 
-app.use(bodyParser.json({ limit: '5mb' }))
-app.use(bodyParser.urlencoded({ limit: '5mb', extended: true }))
+app.use(bodyParser.json({ limit: '2mb' }))
+app.use(bodyParser.urlencoded({ extended: true }))
 // Set security HTTP headers
 app.use(helmet())
 
