@@ -23,7 +23,7 @@ projectRouter
 
 projectRouter
 	.route('/currentUser/:projectId')
-	.put(protectHandler, userRolesHandler('user', 'tester'), uploadProjectImage, resizeProjectImage, updateMyProjectData)
+	.patch(protectHandler, userRolesHandler('user', 'tester'), uploadProjectImage, resizeProjectImage, updateMyProjectData)
 	.delete(protectHandler, userRolesHandler('user'), deleteMyProjectData)
 
 export default projectRouter
