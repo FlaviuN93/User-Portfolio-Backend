@@ -74,7 +74,7 @@ export const sendTokenByCookie = (refreshToken: string | undefined, res: Respons
 		maxAge: +process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
 	}
 
-	res.cookie('jwt', refreshToken, { ...cookieOptions, sameSite: 'strict' })
+	res.cookie('jwt', refreshToken, { ...cookieOptions, sameSite: 'lax' })
 }
 
 export const splitStringByPattern = (value: string, pattern: string): string => value.split(pattern)[1]
