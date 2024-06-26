@@ -11,6 +11,7 @@ import authRouter from './routes/authRoutes'
 import AppError from './utils/appError'
 import { globalErrorHandler } from './utils/errorFunctions'
 import cookieParser from 'cookie-parser'
+import job from './utils/cron'
 
 const app = express()
 
@@ -40,10 +41,15 @@ app.use('/api', limiter)
 
 app.use(cors({ origin: process.env.VITE_APP_LOCAL_DOMAIN, credentials: true }))
 
+app.get('/api/keep-alive', (req: Request, res: Response) => {
+	res.status(200).send('Server is active')
+})
+
 app.use('/api/projects', projectRouter)
 app.use('/api/users', userRouter)
 app.use('/api/auth', authRouter)
 
+job.start()
 app.all('*', (req: Request, res: Response, next: NextFunction) => {
 	next(new AppError(404, 'Not Found'))
 })
