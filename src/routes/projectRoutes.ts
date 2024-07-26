@@ -11,7 +11,7 @@ import {
 	resizeProjectImage,
 } from '../controllers/projectController'
 
-// Order matters. Leave the routes with dynamic parameters at the bottom
+// Order matters. Leave the routes with dynamic parameters at the bottom.
 const projectRouter = express.Router()
 
 projectRouter.route('/currentUser/technologies').get(protectHandler, getTechnologiesData)
